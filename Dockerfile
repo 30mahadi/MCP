@@ -1,34 +1,30 @@
-# See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
+FROM mcr.microsoft.com/devcontainers/python:3.11
+MAINTAINER AutoGen
 
-# This stage is used when running from VS in fast mode (Default for Debug configuration)
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-USER $APP_UID
-WORKDIR /app
-EXPOSE 5001
+# Install packages
+# ffmpeg and exiftool are needed for mdconvert
+RUN apt-get update && apt-get install ffmpeg exiftool -y
 
-# This stage is used to build the service project
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-ARG BUILD_CONFIGURATION=Release
-WORKDIR /src
-COPY ["dotnet/Directory.Packages.props", "dotnet/"]
-COPY ["dotnet/Directory.Build.props", "dotnet/"]
-COPY ["dotnet/Directory.Build.targets", "dotnet/"]
-COPY ["dotnet/NuGet.config", "dotnet/"]
-COPY ["dotnet/src/Microsoft.Autogen.AgentHost/Microsoft.Autogen.AgentHost.csproj", "dotnet/src/Microsoft.Autogen.AgentHost/"]
-COPY ["dotnet/src/Microsoft.AutoGen.Runtime.Grpc/Microsoft.AutoGen.RuntimeGateway.Grpc.csproj", "dotnet/src/Microsoft.AutoGen.RuntimeGateway.Grpc/"]
-COPY ["dotnet/src/Microsoft.AutoGen.Contracts/Microsoft.AutoGen.Contracts.csproj", "dotnet/src/Microsoft.AutoGen.Contracts/"]
-RUN dotnet restore "./dotnet/src/Microsoft.Autogen.AgentHost/Microsoft.Autogen.AgentHost.csproj"
-COPY . .
-WORKDIR "/src/dotnet/src/Microsoft.Autogen.AgentHost"
-RUN dotnet build "./Microsoft.Autogen.AgentHost.csproj" -c $BUILD_CONFIGURATION -o /app/build
+# Set the image to the Pacific Timezone
+RUN ln -snf /usr/share/zoneinfo/US/Pacific /etc/localtime && echo "US/Pacific" > /etc/timezone
 
-# This stage is used to publish the service project to be copied to the final stage
-FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./Microsoft.Autogen.AgentHost.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+# Upgrade pip
+RUN pip install --upgrade pip
 
-# This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
-FROM base AS final
-WORKDIR /app
-COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Microsoft.Autogen.AgentHost.dll"]
+# Pre-load autogen to get the dependencies, but then uninstall them (leaving dependencies in place)
+RUN pip install autogen-core autogen-agentchat autogen-ext pyyaml
+RUN pip uninstall --yes autogen-core autogen-agentchat autogen-ext
+
+# Optional markitdown dependencies
+RUN pip install markitdown SpeechRecognition pydub youtube_transcript_api==0.6.0
+
+# Pre-load popular packages as per https://learnpython.com/blog/most-popular-python-packages/
+RUN pip install numpy pandas matplotlib seaborn scikit-learn requests urllib3 nltk pytest
+
+# Pre-load Playwright
+RUN pip install playwright
+RUN playwright install --with-deps chromium
+
+# Webarena (evaluation code)
+#RUN pip install beartype aiolimiter
+#RUN /usr/bin/echo -e "import nltk\nnltk.download('punkt')" | python
