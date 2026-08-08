@@ -1,11 +1,20 @@
-- name: Chat with an agent
-  href: Chat-with-an-agent.md
+- name: Docs
+  href: articles/
 
-- name: Image chat with agent
-  href: Image-chat-with-agent.md
+- name: Tutorial
+  href: tutorial/
 
-- name: Create agent with tools
-  href: Create-agent-with-tools.md
+- name: API Reference
+  href: api/
 
-- name: Use AutoGen.Net agent as model in AG Studio
-  href: Use-AutoGen.Net-agent-as-model-in-AG-Studio.md
+- name: Release Notes
+  href: release_note/
+
+- name: Comparison between Python AutoGen and AutoGen.Net
+  href: articles/function-comparison-page-between-python-AutoGen-and-autogen.net.md
+
+- name: Other Languages
+  dropdown: true
+  items:
+    - name: Python
+      href: https://microsoft.github.io/autogen/

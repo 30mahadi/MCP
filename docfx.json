@@ -3,15 +3,8 @@
     {
       "src": [
         {
-          "files": [
-            "src/Microsoft.AutoGen/Core/**/*.csproj",
-            "src/Microsoft.AutoGen/Contracts/**/*.csproj",
-            "src/Microsoft.AutoGen/Core.Grpc/**/*.csproj",
-            "src/Microsoft.AutoGen/AgentHost/**/*.csproj",
-            "src/Microsoft.AutoGen/RuntimeGateway.Grpc/**/*.csproj",
-            "src/Microsoft.AutoGen/Extensions/**/*.csproj"
-          ],
-          "src": "../../dotnet/"
+          "files": ["src/**/*.csproj"],
+          "src": "../"
         }
       ],
       "dest": "api",
@@ -21,7 +14,8 @@
       "noRestore": false,
       "namespaceLayout": "flattened",
       "memberLayout": "samePage",
-      "allowCompilationErrors": true
+      "allowCompilationErrors": false,
+      "filter": "filterConfig.yml"
     }
   ],
   "build": {
@@ -34,8 +28,12 @@
       },
       {
         "files": [
-          "core/**.md",
-          "core/**/toc.yml",
+          "articles/**.md",
+          "articles/**/toc.yml",
+          "tutorial/**.md",
+          "tutorial/**/toc.yml",
+          "release_note/**.md",
+          "release_note/**/toc.yml",
           "toc.yml",
           "*.md"
         ]
@@ -56,20 +54,18 @@
       "modern",
       "template"
     ],
-    "globalMetadata": {
-      "_appTitle": "AutoGen .NET",
-      "_appName": "AutoGen .NET",
-      "_appLogoPath": "images/logo.svg",
-      "_appFooter": "AutoGen",
-      "_appFaviconPath": "images/favicon.ico",
+    "globalMetadata":{
+      "_appTitle": "AutoGen for .NET",
+      "_appName": "AutoGen for .NET",
+      "_appLogoPath": "images/ag.ico",
+      "_appFooter": "AutoGen for .NET",
+      "_appFaviconPath": "images/ag.ico",
       "_gitContribute": {
-        "repo": "https://github.com/microsoft/autogen.git"
+        "repo": "https://github.com/microsoft/autogen.git",
+        "branch": "dotnet"
       }
     },
-    "postProcessors": [
-      "ExtractSearchIndex"
-    ],
-    "_enableSearch": true,
+    "postProcessors": [],
     "keepFileLink": false,
     "disableGitFeatures": false
   }
