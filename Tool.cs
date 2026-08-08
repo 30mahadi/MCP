@@ -1,43 +1,51 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Tool.cs
 
-using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace AutoGen.Anthropic.DTO;
+namespace AutoGen.Mistral;
 
-public class Tool
-{
-    [JsonPropertyName("name")]
-    public string? Name { get; set; }
-
-    [JsonPropertyName("description")]
-    public string? Description { get; set; }
-
-    [JsonPropertyName("input_schema")]
-    public InputSchema? InputSchema { get; set; }
-
-    [JsonPropertyName("cache_control")]
-    public CacheControl? CacheControl { get; set; }
-}
-
-public class InputSchema
+public abstract class ToolBase
 {
     [JsonPropertyName("type")]
-    public string? Type { get; set; }
+    public string Type { get; set; }
 
-    [JsonPropertyName("properties")]
-    public Dictionary<string, SchemaProperty>? Properties { get; set; }
-
-    [JsonPropertyName("required")]
-    public List<string>? Required { get; set; }
+    public ToolBase(string type)
+    {
+        Type = type;
+    }
 }
 
-public class SchemaProperty
+public class FunctionTool : ToolBase
 {
-    [JsonPropertyName("type")]
-    public string? Type { get; set; }
+    public FunctionTool(FunctionDefinition function)
+        : base("function")
+    {
+        Function = function;
+    }
 
-    [JsonPropertyName("description")]
-    public string? Description { get; set; }
+    [JsonPropertyName("function")]
+    public FunctionDefinition Function { get; set; }
+}
+
+[JsonConverter(typeof(JsonPropertyNameEnumConverter<ToolChoiceEnum>))]
+public enum ToolChoiceEnum
+{
+    /// <summary>
+    /// Auto-detect whether to call a function.
+    /// </summary>
+    [JsonPropertyName("auto")]
+    Auto = 0,
+
+    /// <summary>
+    /// Won't call a function.
+    /// </summary>
+    [JsonPropertyName("none")]
+    None,
+
+    /// <summary>
+    /// Force to call a function.
+    /// </summary>
+    [JsonPropertyName("any")]
+    Any,
 }

@@ -1,55 +1,37 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Message.cs
 
-using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
-namespace AutoGen.Core;
+namespace AutoGen.Ollama;
 
-[Obsolete("This message class is deprecated, please use a specific AutoGen built-in message type instead. For more information, please visit https://microsoft.github.io/autogen-for-net/articles/Built-in-messages.html")]
-public class Message : IMessage
+public class Message
 {
-    public Message(
-        Role role,
-        string? content,
-        string? from = null,
-        ToolCall? toolCall = null)
+    public Message()
     {
-        this.Role = role;
-        this.Content = content;
-        this.From = from;
-        this.FunctionName = toolCall?.FunctionName;
-        this.FunctionArguments = toolCall?.FunctionArguments;
     }
 
-    public Message(Message other)
-        : this(other.Role, other.Content, other.From)
+    public Message(string role, string value)
     {
-        this.FunctionName = other.FunctionName;
-        this.FunctionArguments = other.FunctionArguments;
-        this.Value = other.Value;
-        this.Metadata = other.Metadata;
+        Role = role;
+        Value = value;
     }
-
-    public Role Role { get; set; }
-
-    public string? Content { get; set; }
-
-    public string? From { get; set; }
-
-    public string? FunctionName { get; set; }
-
-    public string? FunctionArguments { get; set; }
 
     /// <summary>
-    /// raw message
+    /// the role of the message, either system, user or assistant
     /// </summary>
-    public object? Value { get; set; }
+    [JsonPropertyName("role")]
+    public string Role { get; set; } = string.Empty;
+    /// <summary>
+    /// the content of the message
+    /// </summary>
+    [JsonPropertyName("content")]
+    public string Value { get; set; } = string.Empty;
 
-    public IList<KeyValuePair<string, object>> Metadata { get; set; } = new List<KeyValuePair<string, object>>();
-
-    public override string ToString()
-    {
-        return $"Message({this.Role}, {this.Content}, {this.From}, {this.FunctionName}, {this.FunctionArguments})";
-    }
+    /// <summary>
+    ///  (optional): a list of images to include in the message (for multimodal models such as llava)
+    /// </summary>
+    [JsonPropertyName("images")]
+    public IList<string>? Images { get; set; }
 }

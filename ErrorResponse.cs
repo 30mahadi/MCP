@@ -3,19 +3,17 @@
 
 using System.Text.Json.Serialization;
 
-namespace AutoGen.Anthropic.DTO;
+namespace AutoGen.Mistral;
 
-public sealed class ErrorResponse
+public class ErrorResponse
 {
+    public ErrorResponse(Error error)
+    {
+        Error = error;
+    }
+    /// <summary>
+    /// Gets or Sets Error
+    /// </summary>
     [JsonPropertyName("error")]
-    public Error? Error { get; set; }
-}
-
-public sealed class Error
-{
-    [JsonPropertyName("Type")]
-    public string? Type { get; set; }
-
-    [JsonPropertyName("message")]
-    public string? Message { get; set; }
+    public Error Error { get; set; }
 }

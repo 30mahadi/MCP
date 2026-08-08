@@ -4,93 +4,47 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace AutoGen.Anthropic.DTO;
+namespace AutoGen.Mistral;
+
 public class ChatCompletionResponse
 {
-    [JsonPropertyName("content")]
-    public List<ContentBase>? Content { get; set; }
-
+    /// <summary>
+    /// Gets or Sets Id
+    /// </summary>
+    /// <example>cmpl-e5cc70bb28c444948073e77776eb30ef</example>
     [JsonPropertyName("id")]
     public string? Id { get; set; }
 
+    /// <summary>
+    /// Gets or Sets VarObject
+    /// </summary>
+    /// <example>chat.completion</example>
+    [JsonPropertyName("object")]
+    public string? VarObject { get; set; }
+
+    /// <summary>
+    /// Gets or Sets Created
+    /// </summary>
+    /// <example>1702256327</example>
+    [JsonPropertyName("created")]
+    public int Created { get; set; }
+
+    /// <summary>
+    /// Gets or Sets Model
+    /// </summary>
+    /// <example>mistral-tiny</example>
     [JsonPropertyName("model")]
     public string? Model { get; set; }
 
-    [JsonPropertyName("role")]
-    public string? Role { get; set; }
+    /// <summary>
+    /// Gets or Sets Choices
+    /// </summary>
+    [JsonPropertyName("choices")]
+    public List<Choice>? Choices { get; set; }
 
-    [JsonPropertyName("stop_reason")]
-    public string? StopReason { get; set; }
-
-    [JsonPropertyName("stop_sequence")]
-    public object? StopSequence { get; set; }
-
-    [JsonPropertyName("type")]
-    public string? Type { get; set; }
-
-    [JsonPropertyName("usage")]
-    public Usage? Usage { get; set; }
-
-    [JsonPropertyName("delta")]
-    public Delta? Delta { get; set; }
-
-    [JsonPropertyName("message")]
-    public StreamingMessage? StreamingMessage { get; set; }
-}
-
-public class StreamingMessage
-{
-    [JsonPropertyName("id")]
-    public string? Id { get; set; }
-
-    [JsonPropertyName("type")]
-    public string? Type { get; set; }
-
-    [JsonPropertyName("role")]
-    public string? Role { get; set; }
-
-    [JsonPropertyName("model")]
-    public string? Model { get; set; }
-
-    [JsonPropertyName("stop_reason")]
-    public object? StopReason { get; set; }
-
-    [JsonPropertyName("stop_sequence")]
-    public object? StopSequence { get; set; }
-
-    [JsonPropertyName("usage")]
-    public Usage? Usage { get; set; }
-}
-
-public class Usage
-{
-    [JsonPropertyName("input_tokens")]
-    public int InputTokens { get; set; }
-
-    [JsonPropertyName("output_tokens")]
-    public int OutputTokens { get; set; }
-
-    [JsonPropertyName("cache_creation_input_tokens")]
-    public int CacheCreationInputTokens { get; set; }
-
-    [JsonPropertyName("cache_read_input_tokens")]
-    public int CacheReadInputTokens { get; set; }
-}
-
-public class Delta
-{
-    [JsonPropertyName("stop_reason")]
-    public string? StopReason { get; set; }
-
-    [JsonPropertyName("type")]
-    public string? Type { get; set; }
-
-    [JsonPropertyName("text")]
-    public string? Text { get; set; }
-
-    [JsonPropertyName("partial_json")]
-    public string? PartialJson { get; set; }
-
+    /// <summary>
+    /// Gets or Sets Usage
+    /// </summary>
     [JsonPropertyName("usage")]
     public Usage? Usage { get; set; }
 }

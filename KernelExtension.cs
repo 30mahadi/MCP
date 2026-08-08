@@ -1,81 +1,48 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // KernelExtension.cs
 
-using Microsoft.DotNet.Interactive;
-using Microsoft.DotNet.Interactive.Commands;
-using Microsoft.DotNet.Interactive.Connection;
-using Microsoft.DotNet.Interactive.Events;
+using System.Linq;
+using Microsoft.SemanticKernel;
 
-namespace AutoGen.DotnetInteractive.Extension;
+namespace AutoGen.SemanticKernel.Extension;
 
 public static class KernelExtension
 {
-    public static async Task<string?> RunSubmitCodeCommandAsync(
-        this Kernel kernel,
-        string codeBlock,
-        string targetKernelName,
-        CancellationToken ct = default)
+    public static SemanticKernelAgent ToSemanticKernelAgent(this Kernel kernel, string name, string systemMessage = "You are a helpful AI assistant", string? modelServiceId = null, PromptExecutionSettings? settings = null)
     {
-        try
-        {
-            var cmd = new SubmitCode(codeBlock, targetKernelName);
-            var res = await kernel.SendAndThrowOnCommandFailedAsync(cmd, ct);
-            var events = res.Events;
-            var displayValues = res.Events.Where(x => x is StandardErrorValueProduced || x is StandardOutputValueProduced || x is ReturnValueProduced || x is DisplayedValueProduced)
-                    .SelectMany(x => (x as DisplayEvent)!.FormattedValues);
-
-            if (displayValues is null || !displayValues.Any())
-            {
-                return null;
-            }
-
-            return string.Join("\n", displayValues.Select(x => x.Value));
-        }
-        catch (Exception ex)
-        {
-            return $"Error: {ex.Message}";
-        }
+        return new SemanticKernelAgent(kernel, name, systemMessage, modelServiceId, settings);
     }
 
-    internal static void SetUpValueSharingIfSupported(this ProxyKernel proxyKernel)
+    /// <summary>
+    /// Convert a <see cref="KernelFunctionMetadata"/> to a <see cref="FunctionContract"/>
+    /// </summary>
+    /// <param name="metadata">kernel function metadata</param>
+    public static FunctionContract ToFunctionContract(this KernelFunctionMetadata metadata)
     {
-        var supportedCommands = proxyKernel.KernelInfo.SupportedKernelCommands;
-        if (supportedCommands.Any(d => d.Name == nameof(RequestValue)) &&
-            supportedCommands.Any(d => d.Name == nameof(SendValue)))
+        return new FunctionContract()
         {
-            proxyKernel.UseValueSharing();
-        }
+            Name = metadata.Name,
+            Description = metadata.Description,
+            Parameters = metadata.Parameters.Select(p => p.ToFunctionParameterContract()).ToList(),
+            ReturnType = metadata.ReturnParameter.ParameterType,
+            ReturnDescription = metadata.ReturnParameter.Description,
+            ClassName = metadata.PluginName,
+        };
     }
 
-    internal static async Task<KernelCommandResult> SendAndThrowOnCommandFailedAsync(
-        this Kernel kernel,
-        KernelCommand command,
-        CancellationToken cancellationToken)
+    /// <summary>
+    /// Convert a <see cref="KernelParameterMetadata"/> to a <see cref="FunctionParameterContract"/>
+    /// </summary>
+    /// <param name="metadata">kernel parameter metadata</param>
+    public static FunctionParameterContract ToFunctionParameterContract(this KernelParameterMetadata metadata)
     {
-        var result = await kernel.SendAsync(command, cancellationToken);
-        result.ThrowOnCommandFailed();
-        return result;
+        return new FunctionParameterContract()
+        {
+            Name = metadata.Name,
+            Description = metadata.Description,
+            DefaultValue = metadata.DefaultValue,
+            IsRequired = metadata.IsRequired,
+            ParameterType = metadata.ParameterType,
+        };
     }
-
-    internal static void ThrowOnCommandFailed(this KernelCommandResult result)
-    {
-        var failedEvents = result.Events.OfType<CommandFailed>();
-        if (!failedEvents.Any())
-        {
-            return;
-        }
-
-        if (failedEvents.Skip(1).Any())
-        {
-            var innerExceptions = failedEvents.Select(f => f.GetException());
-            throw new AggregateException(innerExceptions);
-        }
-        else
-        {
-            throw failedEvents.Single().GetException();
-        }
-    }
-
-    private static ArgumentException GetException(this CommandFailed commandFailedEvent)
-        => new ArgumentException(commandFailedEvent.Message);
 }
