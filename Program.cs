@@ -1,36 +1,27 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Program.cs
 
+using Microsoft.Extensions.Hosting;
+
 var builder = DistributedApplication.CreateBuilder(args);
-
-builder.AddAzureProvisioning();
-
-var qdrant = builder.AddQdrant("qdrant");
-
-var agentHost = builder.AddContainer("agent-host", "autogen-host")
-                       .WithEnvironment("ASPNETCORE_URLS", "https://+;http://+")
-                       .WithEnvironment("ASPNETCORE_HTTPS_PORTS", "5001")
-                       .WithEnvironment("ASPNETCORE_Kestrel__Certificates__Default__Password", "mysecurepass")
-                       .WithEnvironment("ASPNETCORE_Kestrel__Certificates__Default__Path", "/https/devcert.pfx")
-                       .WithBindMount("./certs", "/https/", true)
-                       .WithHttpsEndpoint(targetPort: 5001);
-
-var agentHostHttps = agentHost.GetEndpoint("https");
-
-builder.AddProject<Projects.DevTeam_Backend>("backend")
-    .WithEnvironment("AGENT_HOST", $"{agentHostHttps.Property(EndpointProperty.Url)}")
-    .WithEnvironment("Qdrant__Endpoint", $"{qdrant.Resource.HttpEndpoint.Property(EndpointProperty.Url)}")
-    .WithEnvironment("Qdrant__ApiKey", $"{qdrant.Resource.ApiKeyParameter.Value}")
-    .WithEnvironment("Qdrant__VectorSize", "1536")
-    .WithEnvironment("OpenAI__Key", builder.Configuration["OpenAI:Key"])
-    .WithEnvironment("OpenAI__Endpoint", builder.Configuration["OpenAI:Endpoint"])
-    .WithEnvironment("Github__AppId", builder.Configuration["Github:AppId"])
-    .WithEnvironment("Github__InstallationId", builder.Configuration["Github:InstallationId"])
-    .WithEnvironment("Github__WebhookSecret", builder.Configuration["Github:WebhookSecret"])
-    .WithEnvironment("Github__AppKey", builder.Configuration["Github:AppKey"])
-    .WaitFor(agentHost)
-    .WaitFor(qdrant);
-//TODO: add this to the config in backend
-//.WithEnvironment("", acaSessionsEndpoint);
-
-builder.Build().Run();
+var backend = builder.AddProject<Projects.Microsoft_AutoGen_AgentHost>("backend").WithExternalHttpEndpoints();
+var client = builder.AddProject<Projects.HelloAgent>("HelloAgentsDotNET")
+    .WithReference(backend)
+    .WithEnvironment("AGENT_HOST", backend.GetEndpoint("https"))
+    .WithEnvironment("STAY_ALIVE_ON_GOODBYE", "true")
+    .WaitFor(backend);
+#pragma warning disable ASPIREHOSTINGPYTHON001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+// xlang is over http for now - in prod use TLS between containers
+builder.AddPythonApp("HelloAgentsPython", "../../../../python/samples/core_xlang_hello_python_agent", "hello_python_agent.py", "../../.venv")
+    .WithReference(backend)
+    .WithEnvironment("AGENT_HOST", backend.GetEndpoint("http"))
+    .WithEnvironment("STAY_ALIVE_ON_GOODBYE", "true")
+    .WithEnvironment("GRPC_DNS_RESOLVER", "native")
+    .WithOtlpExporter()
+    .WaitFor(client);
+#pragma warning restore ASPIREHOSTINGPYTHON001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+using var app = builder.Build();
+await app.StartAsync();
+var url = backend.GetEndpoint("http").Url;
+Console.WriteLine("Backend URL: " + url);
+await app.WaitForShutdownAsync();

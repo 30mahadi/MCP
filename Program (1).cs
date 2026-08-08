@@ -1,81 +1,82 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Program.cs
 
-using Azure.Identity;
-using DevTeam.Backend.Agents;
-using DevTeam.Backend.Agents.Developer;
-using DevTeam.Backend.Agents.DeveloperLead;
-using DevTeam.Backend.Agents.ProductManager;
-using DevTeam.Backend.Services;
-using DevTeam.Options;
+using Hello;
+using Microsoft.AutoGen.Agents;
+using Microsoft.AutoGen.Contracts;
 using Microsoft.AutoGen.Core;
-using Microsoft.AutoGen.Core.Grpc;
-using Microsoft.Extensions.Azure;
-using Microsoft.Extensions.Options;
-using Octokit.Webhooks;
-using Octokit.Webhooks.AspNetCore;
 
-var builder = WebApplication.CreateBuilder(args);
-
-builder.AddServiceDefaults();
-
-builder.Services.AddHttpClient();
-builder.Services.AddControllers();
-builder.Services.AddSwaggerGen();
-
-builder.AddGrpcAgentWorker(builder.Configuration["AGENT_HOST"]!)
-    .AddAgentWorker()
-    .AddAgent<AzureGenie>(nameof(AzureGenie))
-    //.AddAgent<Sandbox>(nameof(Sandbox))
-    .AddAgent<Hubber>(nameof(Hubber))
-    .AddAgent<Dev>(nameof(Dev))
-    .AddAgent<ProductManager>(nameof(ProductManager))
-    .AddAgent<DeveloperLead>(nameof(DeveloperLead));
-
-builder.Services.AddSingleton<AgentRuntime>();
-builder.Services.AddSingleton<WebhookEventProcessor, GithubWebHookProcessor>();
-builder.Services.AddSingleton<GithubAuthService>();
-builder.Services.AddSingleton<IManageAzure, AzureService>();
-builder.Services.AddSingleton<IManageGithub, GithubService>();
-
-builder.Services.AddTransient(s =>
+// send a message to the agent
+var builder = new HostApplicationBuilder();
+// put these in your environment or appsettings.json
+builder.Configuration["HelloAIAgents:ModelType"] = "azureopenai";
+builder.Configuration["HelloAIAgents:LlmModelName"] = "gpt-3.5-turbo";
+Environment.SetEnvironmentVariable("AZURE_OPENAI_CONNECTION_STRING", "Endpoint=https://TODO.openai.azure.com/;Key=TODO;Deployment=TODO");
+if (Environment.GetEnvironmentVariable("AZURE_OPENAI_CONNECTION_STRING") == null)
 {
-    var ghOptions = s.GetRequiredService<IOptions<GithubOptions>>();
-    var logger = s.GetRequiredService<ILogger<GithubAuthService>>();
-    var ghService = new GithubAuthService(ghOptions, logger);
-    var client = ghService.GetGitHubClient();
-    return client;
+    throw new InvalidOperationException("AZURE_OPENAI_CONNECTION_STRING not set, try something like AZURE_OPENAI_CONNECTION_STRING = \"Endpoint=https://TODO.openai.azure.com/;Key=TODO;Deployment=TODO\"");
+}
+builder.Configuration["ConnectionStrings:HelloAIAgents"] = Environment.GetEnvironmentVariable("AZURE_OPENAI_CONNECTION_STRING");
+builder.AddChatCompletionService("HelloAIAgents");
+var _ = new AgentTypes(new Dictionary<string, Type>
+{
+    { "HelloAIAgents", typeof(HelloAIAgent) }
 });
+var local = true;
+if (Environment.GetEnvironmentVariable("AGENT_HOST") != null) { local = false; }
+var app = await Microsoft.AutoGen.Core.Grpc.AgentsApp.PublishMessageAsync("HelloAgents", new NewMessageReceived
+{
+    Message = "World"
+}, local: local).ConfigureAwait(false);
+await app.WaitForShutdownAsync();
 
-// TODO: Rework?
-builder.Services.AddOptions<GithubOptions>()
-    .Configure<IConfiguration>((settings, configuration) =>
+namespace Hello
+{
+    [TopicSubscription("HelloAgents")]
+    public class HelloAgent(
+        [FromKeyedServices("AgentsMetadata")] AgentsMetadata typeRegistry,
+        IHostApplicationLifetime hostApplicationLifetime) : ConsoleAgent(
+            typeRegistry),
+            ISayHello,
+            IHandle<NewMessageReceived>,
+            IHandle<ConversationClosed>
     {
-        configuration.GetSection("Github").Bind(settings);
-    })
-    .ValidateDataAnnotations()
-    .ValidateOnStart();
+        public async Task Handle(NewMessageReceived item, CancellationToken cancellationToken = default)
+        {
+            var response = await SayHello(item.Message).ConfigureAwait(false);
+            var evt = new Output
+            {
+                Message = response
+            };
+            await PublishMessageAsync(evt).ConfigureAwait(false);
+            var goodbye = new ConversationClosed
+            {
+                UserId = this.AgentId.Key,
+                UserMessage = "Goodbye"
+            };
+            await PublishMessageAsync(goodbye).ConfigureAwait(false);
+        }
+        public async Task Handle(ConversationClosed item, CancellationToken cancellationToken = default)
+        {
+            var goodbye = $"*********************  {item.UserId} said {item.UserMessage}  ************************";
+            var evt = new Output
+            {
+                Message = goodbye
+            };
+            await PublishMessageAsync(evt).ConfigureAwait(false);
+            //sleep30 seconds
+            await Task.Delay(30000).ConfigureAwait(false);
+            hostApplicationLifetime.StopApplication();
 
-builder.Services.AddAzureClients(clientBuilder =>
-{
-    clientBuilder.AddArmClient(default);
-    clientBuilder.UseCredential(new DefaultAzureCredential());
-});
-
-var app = builder.Build();
-
-Microsoft.Extensions.Hosting.AspireHostingExtensions.MapDefaultEndpoints(app);
-app.UseRouting()
-.UseEndpoints(endpoints =>
-{
-    var ghOptions = app.Services.GetRequiredService<IOptions<GithubOptions>>().Value;
-    endpoints.MapGitHubWebhooks(secret: ghOptions.WebhookSecret);
-}); ;
-
-app.UseSwagger();
-/* app.UseSwaggerUI(c =>
-{
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
-}); */
-
-app.Run();
+        }
+        public async Task<string> SayHello(string ask)
+        {
+            var response = $"\n\n\n\n***************Hello {ask}**********************\n\n\n\n";
+            return response;
+        }
+    }
+    public interface ISayHello
+    {
+        public Task<string> SayHello(string ask);
+    }
+}
