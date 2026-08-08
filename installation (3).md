@@ -1,3 +1,10 @@
+---
+myst:
+  html_meta:
+    "description lang=en": |
+      Installing AutoGen AgentChat
+---
+
 # Installation
 
 ## Create a Virtual Environment (optional)
@@ -18,7 +25,8 @@ source .venv/bin/activate
 
 Windows command-line:
 ```batch
-python3 -m venv .venv
+# The command may be `python3` instead of `python` depending on your setup
+python -m venv .venv
 .venv\Scripts\activate.bat
 ```
 
@@ -55,13 +63,13 @@ conda deactivate
 
 ``````
 
-## Install using pip
+## Install Using pip
 
-Install the `autogen-core` package using pip:
+Install the `autogen-agentchat` package using pip:
 
 ```bash
 
-pip install "autogen-core"
+pip install -U "autogen-agentchat"
 ```
 
 ```{note}
@@ -82,11 +90,3 @@ If you are using Azure OpenAI with AAD authentication, you need to install the f
 ```bash
 pip install "autogen-ext[azure]"
 ```
-
-## Install Docker for Code Execution (Optional)
-
-We recommend using Docker to use {py:class}`~autogen_ext.code_executors.docker.DockerCommandLineCodeExecutor` for execution of model-generated code.
-To install Docker, follow the instructions for your operating system on the [Docker website](https://docs.docker.com/get-docker/).
-
-To learn more code execution, see [Command Line Code Executors](./components/command-line-code-executors.ipynb)
-and [Code Execution](./design-patterns/code-execution-groupchat.ipynb).
