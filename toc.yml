@@ -1,10 +1,11 @@
-- name: Overview
-  href: index.md
-- name: Installation
-  href: installation.md
-- name: Tutorial
-  href: tutorial.md
-- name: Differences from Python
-  href: differences-from-python.md
-- name: Protobuf message types
-  href: protobuf-message-types.md
+- name: Chat with an agent
+  href: Chat-with-an-agent.md
+
+- name: Image chat with agent
+  href: Image-chat-with-agent.md
+
+- name: Create agent with tools
+  href: Create-agent-with-tools.md
+
+- name: Use AutoGen.Net agent as model in AG Studio
+  href: Use-AutoGen.Net-agent-as-model-in-AG-Studio.md
