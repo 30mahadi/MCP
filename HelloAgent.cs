@@ -17,7 +17,7 @@ public class HelloAgent(
     Logger<BaseAgent>? logger = null) : BaseAgent(id, runtime, "Hello Agent", logger),
         IHandle<NewMessageReceived>,
         IHandle<ConversationClosed>,
-        IHandle<Shutdown>
+        IHandle<Shutdown>, IHandleConsole
 {
     // This will capture the message sent in Program.cs
     public async ValueTask HandleAsync(NewMessageReceived item, MessageContext messageContext)
@@ -41,7 +41,6 @@ public class HelloAgent(
             await this.PublishMessageAsync(new Shutdown(), new TopicId("HelloTopic"));
         }
     }
-
     public async ValueTask HandleAsync(Shutdown item, MessageContext messageContext)
     {
         Console.WriteLine("Shutting down...");

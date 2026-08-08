@@ -4,7 +4,7 @@
 using System.Runtime.CompilerServices;
 using AutoGen.Core;
 
-namespace AutoGen.Tests;
+namespace AutoGen.WebAPI.Tests;
 
 public class EchoAgent : IStreamingAgent
 {
@@ -14,24 +14,32 @@ public class EchoAgent : IStreamingAgent
     }
     public string Name { get; }
 
-    public Task<IMessage> GenerateReplyAsync(
-        IEnumerable<IMessage> conversation,
+    public async Task<IMessage> GenerateReplyAsync(
+        IEnumerable<IMessage> messages,
         GenerateReplyOptions? options = null,
-        CancellationToken ct = default)
+        CancellationToken cancellationToken = default)
     {
-        // return the most recent message
-        var lastMessage = conversation.Last();
-        lastMessage.From = this.Name;
-
-        return Task.FromResult(lastMessage);
+        return messages.Last();
     }
 
-    public async IAsyncEnumerable<IMessage> GenerateStreamingReplyAsync(IEnumerable<IMessage> messages, GenerateReplyOptions? options = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<IMessage> GenerateStreamingReplyAsync(
+        IEnumerable<IMessage> messages,
+        GenerateReplyOptions? options = null,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        foreach (var message in messages)
+        var lastMessage = messages.LastOrDefault();
+        if (lastMessage == null)
         {
-            message.From = this.Name;
-            yield return message;
+            yield break;
+        }
+
+        // return each character of the last message as a separate message
+        if (lastMessage.GetContent() is string content)
+        {
+            foreach (var c in content)
+            {
+                yield return new TextMessageUpdate(Role.Assistant, c.ToString(), this.Name);
+            }
         }
     }
 }
