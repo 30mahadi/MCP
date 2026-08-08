@@ -1,30 +1,16 @@
-"""
-This module provides implementation of various pre-defined multi-agent teams.
-Each team inherits from the BaseGroupChat class.
-"""
-
-from ._group_chat._base_group_chat import BaseGroupChat
-from ._group_chat._graph import (
-    DiGraph,
-    DiGraphBuilder,
-    DiGraphEdge,
-    DiGraphNode,
-    GraphFlow,
+from ._buffered_chat_completion_context import BufferedChatCompletionContext
+from ._chat_completion_context import ChatCompletionContext, ChatCompletionContextState
+from ._head_and_tail_chat_completion_context import HeadAndTailChatCompletionContext
+from ._token_limited_chat_completion_context import TokenLimitedChatCompletionContext
+from ._unbounded_chat_completion_context import (
+    UnboundedChatCompletionContext,
 )
-from ._group_chat._magentic_one import MagenticOneGroupChat
-from ._group_chat._round_robin_group_chat import RoundRobinGroupChat
-from ._group_chat._selector_group_chat import SelectorGroupChat
-from ._group_chat._swarm_group_chat import Swarm
 
 __all__ = [
-    "BaseGroupChat",
-    "RoundRobinGroupChat",
-    "SelectorGroupChat",
-    "Swarm",
-    "MagenticOneGroupChat",
-    "DiGraphBuilder",
-    "DiGraph",
-    "DiGraphNode",
-    "DiGraphEdge",
-    "GraphFlow",
+    "ChatCompletionContext",
+    "ChatCompletionContextState",
+    "UnboundedChatCompletionContext",
+    "BufferedChatCompletionContext",
+    "TokenLimitedChatCompletionContext",
+    "HeadAndTailChatCompletionContext",
 ]
