@@ -1,4 +1,4 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
-// Program.cs
+// GlobalUsing.cs
 
-Console.WriteLine("Hello, World!");
+global using AutoGen.Core;
